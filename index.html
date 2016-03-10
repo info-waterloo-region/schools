@@ -213,6 +213,7 @@
         onEachFeature: function (feature, layer) {
           if (feature.properties) {
             var data = schoolData(layer);
+            layer.bindPopup(data.school);
             layer.on({
               click: function (e) {
                 circleHighlight.setLatLng(layer.getLatLng())
@@ -226,8 +227,24 @@
               this.classList.add("active");
               map.setView(layer.getLatLng(), 15);
               circleHighlight.setLatLng(layer.getLatLng());
+              layer.openPopup();
             }
           }
+        },
+        pointToLayer: function (feature, latlng) {
+          var iconColour = function(need) {
+            switch (need) {
+              case "2": return "#fed976";
+              case "3": return "#feb24c";
+              case "4": return "#fd8d3c";
+              case "5": return "#f03b20";
+              case "6": return "#bd0026";
+              default: return "#ffffb2";
+            }
+          }
+          var colour = iconColour(school_needs[feature.id]);
+          var icon = L.MakiMarkers.icon({icon: "school", color: colour, size: "m"});
+          return L.marker(latlng, {icon: icon});
         }
       });
 
@@ -240,11 +257,11 @@
             var need = district_needs[feature.id];
             function fill(need) {
               switch (need) {
-                case "1": return "#b3cde3";
-                case "2": return "#8c96c6";
-                case "3": return "#8856a7";
-                case "4": return "#810f7c";
-                default: return "#edf8fb";
+                case "1": return "#bae4b3";
+                case "2": return "#74c476";
+                case "3": return "#31a354";
+                case "4": return "#006d2c";
+                default: return "#edf8e9";
               }
             }
             return { color: "#999", weight: 1, fillColor: fill(need), fillOpacity: .6 };
