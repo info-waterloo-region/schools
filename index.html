@@ -57,6 +57,11 @@
         border-bottom-right-radius: 0;
       }
       
+      .list-group-item.active {
+        background-color: #3182bd;
+        border-color: #3182bd;
+      }
+
       div.tab-pane {
         padding-top: 1em;
       }
@@ -234,12 +239,13 @@
         pointToLayer: function (feature, latlng) {
           var iconColour = function(need) {
             switch (need) {
+              case "1": return "#ffffb2";
               case "2": return "#fed976";
               case "3": return "#feb24c";
               case "4": return "#fd8d3c";
               case "5": return "#f03b20";
               case "6": return "#bd0026";
-              default: return "#ffffb2";
+              default: return "#fff";
             }
           }
           var colour = iconColour(school_needs[feature.id]);
@@ -261,7 +267,7 @@
                 case "2": return "#74c476";
                 case "3": return "#31a354";
                 case "4": return "#006d2c";
-                default: return "#edf8e9";
+                default: return "#fff";
               }
             }
             return { color: "#999", weight: 1, fillColor: fill(need), fillOpacity: .6 };
