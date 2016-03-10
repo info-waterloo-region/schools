@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Schools Demo</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://api.tiles.mapbox.com/mapbox.js/v2.2.3/mapbox.css" rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.css" rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.Default.css" rel="stylesheet">
+
+    <link href="offcanvas.css" rel="stylesheet">
+
+    <style>
+      /* make the map full height */
+      html, body, main, .row, #map, #sidebar {
+        height: 100%;
+      }
+
+      /* bootstrap.css sets font-family for these */
+      body, .tooltip, .popover {
+        font-family: "Source Sans Pro";
+      }
+
+      /* .navbar min-height */
+      body {
+        padding-top: 50px;
+      }
+
+      /* use h1 in the navbar */
+      h1 {
+        margin: 0;
+        font-weight: 600;
+      }
+
+      /* no padding in the sidebar */
+      #sidebar {
+        padding-right: inherit;
+        padding-left: inherit;
+        overflow: auto;
+      }
+
+      /* list-group tweaks */
+      .list-group-item:first-child {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+
+      .list-group-item:last-child {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      
+      div.tab-pane {
+        padding-top: 1em;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="navbar navbar-inverse navbar-fixed-top">
+      <nav class="container-fluid" role="navigation">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
+              <span class="sr-only">Navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <h1 class="navbar-brand">Schools Demo</h1>
+          </div> <!--navbar-header-->
+
+          <div class="navbar-collapse collapse" id="navbar-collapse">
+            <ul class="nav navbar-nav">
+              <li class="visible-xs">
+                <a href="#" data-toggle="offcanvas">List of Schools</a>
+              </li>
+            </ul>
+          </div><!--navbar-collapse-->
+      </nav>
+    </header>
+
+    <main class="container-fluid">
+      <div class="row row-offcanvas row-offcanvas-left">
+        <div class="col-xs-6 col-sm-3 sidebar-offcanvas" id="sidebar">
+
+          <!--school list-->
+          <ul class="list-group" id="school-list"></ul>
+
+        </div> <!--sidebar-->
+        <div class="col-xs-12 col-sm-9" id="map"></div>
+      </div> <!--row-->
+    </main>
+
+    <div class="modal fade" id="school-modal" tabindex="-1" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content" id="modal-content"></div>
+      </div>
+    </div><!--school-modal-->
+
+    <!-- Javascripts -->
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
+
+    <script src="https://api.tiles.mapbox.com/mapbox.js/v2.2.3/mapbox.js"></script>
+    <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js"></script>
+    <script src="leaflet/Leaflet.MakiMarkers.js"></script>
+
+    <script src="offcanvas.js"></script>
+
+    <!-- Data -->
+    <script src="district-needs.js"></script>
+    <script src="districts-geo.js"></script>
+    <script src="school-needs.js"></script>
+    <script src="schools-geo.js"></script>
+
+    <!-- Templates -->
+    <script type="text/template" id="school-list-item">
+      <li class="list-group-item" id="{{layerId}}" data-lat="{{lat}}" data-lng="{{lng}}">
+        <h5 class="list-group-item-heading feature-name">
+          {{school}} <strong>{{need}}</strong>
+          <small><br>{{address}}</small>
+        </h5>
+      </li>
+    </script>
+
+
+
+    <!-- Handlebars -->
+    <script>
+      var template = function(elementId) {
+        return Handlebars.compile(document.getElementById(elementId).innerHTML);
+      }
+      var listTemplate = template("school-list-item");
+    </script>
+
+
+    <!-- CSS functions -->
+    <script>
+      // remove a class from an element, eg, "active"
+      var removeClass = function(className) {
+        return function (element) {
+          element.classList.remove(className);
+        }
+      }
+      var removeActive = removeClass("active");
+
+      // get an array of tagName in an element, eg, <li> in <ul>
+      var tagArray = function(tagName) {
+        return function (element) {
+          var elementCollection = element.getElementsByTagName(tagName);
+          return Array.prototype.slice.call(elementCollection);
+        }
+      }
+      var listArray = tagArray("li");
+    </script>
+
+
+    <!-- Map setup -->
+    <script>
+      L.mapbox.accessToken = "pk.eyJ1IjoidG9kZHR1cm5idWxsIiwiYSI6IlVxTDhQT0EifQ.h5dUJmmsLh_zQ7hZQJjBbg";
+      var m = {
+        "id": "mapbox.streets",
+        "centre": [43.43,-80.46],
+        "zoom": 11
+      };
+
+      clusterOptions = {
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        disableClusteringAtZoom: 15,
+        maxClusterRadius: 30
+      }
+    </script>
+
+
+    <!-- Mapping -->
+    <script>
+      var map = L.mapbox.map("map", m.id).setView(m.centre, m.zoom);
+
+      var markerClusters = new L.MarkerClusterGroup(clusterOptions);
+      map.addLayer(markerClusters);
+
+      var circleHighlight = L.circle([0,0], 50, {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.5
+      }).addTo(map);
+
+      var schoolList = document.getElementById("school-list"); // sidebar
+      
+      var schoolData = function(layer) {
+        var data = {
+          "layerId": L.stamp(layer),
+          "lat": layer.getLatLng().lat,
+          "lng": layer.getLatLng().lng,
+          "school": layer.feature.properties.site,
+          "address": layer.feature.properties.address,
+          "need": school_needs[layer.feature.id]
+        }
+        return data;
+      }
+      
+      var schoolMarkers = L.geoJson(null, {
+        onEachFeature: function (feature, layer) {
+          if (feature.properties) {
+            var data = schoolData(layer);
+            layer.on({
+              click: function (e) {
+                circleHighlight.setLatLng(layer.getLatLng())
+              }
+            });
+
+            $("#school-list").append(listTemplate(data)); // easier with JQuery
+            document.getElementById(data.layerId).onclick = function clickSchool() {
+              // Clicking on a school name sets it to "active"
+              listArray(schoolList).forEach(removeActive);
+              this.classList.add("active");
+              map.setView(layer.getLatLng(), 15);
+              circleHighlight.setLatLng(layer.getLatLng());
+            }
+          }
+        }
+      });
+
+      schoolMarkers.addData(schools_geo);
+      markerClusters.addLayer(schoolMarkers);
+
+      var neighbourhoodsLayer = L.geoJson(
+        shapes, {
+          style: function(feature) {
+            var need = district_needs[feature.id];
+            function fill(need) {
+              switch (need) {
+                case "1": return "#b3cde3";
+                case "2": return "#8c96c6";
+                case "3": return "#8856a7";
+                case "4": return "#810f7c";
+                default: return "#edf8fb";
+              }
+            }
+            return { color: "#999", weight: 1, fillColor: fill(need), fillOpacity: .6 };
+            }
+        }
+      );
+      map.addLayer(neighbourhoodsLayer);
+
+
+
+
+
+
+      map.on("moveend", function (e) {
+        var bounds = map.getBounds();
+        listArray(schoolList).forEach(function displaySchool(element) {
+          var latlng = L.latLng(element.dataset.lat, element.dataset.lng)
+          if(bounds.contains(latlng)) {
+            element.style.display = "block";
+          } else {
+            element.style.display = "none";
+          };
+        });
+      });
+
+    </script>
+</body>
+</html>
