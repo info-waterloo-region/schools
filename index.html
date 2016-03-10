@@ -142,10 +142,15 @@
     <script type="text/template" id="school-list-item">
       <li class="list-group-item" id="{{layerId}}" data-lat="{{lat}}" data-lng="{{lng}}">
         <h5 class="list-group-item-heading feature-name">
-          {{school}} <strong>{{need}}</strong>
-          <small><br>{{address}}</small>
+          {{school}}<small><br>{{address}}</small>
         </h5>
       </li>
+    </script>
+
+    <script type="text/template" id="school-popup">
+      <h5>{{school}}</h5>
+      <p>{{address}}</p>
+      <p>School Need Index (1-6): <strong>{{need}}</strong></p>
     </script>
 
 
@@ -156,6 +161,7 @@
         return Handlebars.compile(document.getElementById(elementId).innerHTML);
       }
       var listTemplate = template("school-list-item");
+      var popupTemplate = template("school-popup");
     </script>
 
 
@@ -194,7 +200,7 @@
         spiderfyOnMaxZoom: true,
         showCoverageOnHover: false,
         zoomToBoundsOnClick: true,
-        disableClusteringAtZoom: 15,
+        disableClusteringAtZoom: 14,
         maxClusterRadius: 30
       }
       var markerClusters = new L.MarkerClusterGroup(clusterOptions);
@@ -205,8 +211,8 @@
     <!-- Mapping -->
     <script>
       var circleHighlight = L.circle([0,0], 50, {
-        color: 'red',
-        fillColor: '#f03',
+        color: "#a50f15",
+        fillColor: "#a50f15",
         fillOpacity: 0.5
       }).addTo(map);
 
@@ -232,7 +238,7 @@
           case "4": return "#fd8d3c";
           case "5": return "#f03b20";
           case "6": return "#bd0026";
-          default: return "#fff";
+          default: return "#ccc";
         }
       }
       
@@ -242,7 +248,7 @@
           case "2": return "#74c476";
           case "3": return "#31a354";
           case "4": return "#006d2c";
-          default: return "#fff";
+          default: return "#ccc";
         }
       }
 
@@ -251,7 +257,7 @@
         onEachFeature: function (feature, layer) {
           if (feature.properties) {
             var data = schoolData(layer);
-            layer.bindPopup(data.school);
+            layer.bindPopup(popupTemplate(data));
             layer.on({
               click: function (e) {
                 circleHighlight.setLatLng(layer.getLatLng())
@@ -283,8 +289,13 @@
         shapes, {
           style: function(feature) {
             var need = district_needs[feature.id];
-            return { color: "#999", weight: 1, fillColor: districtColour(need), fillOpacity: .6 };
-            }
+            return {
+              color: "#999",
+              weight: 1,
+              fillColor: districtColour(need),
+              fillOpacity: .6
+            };
+          }
         }
       );
       map.addLayer(neighbourhoodsLayer);
