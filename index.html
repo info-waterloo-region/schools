@@ -61,9 +61,21 @@
         background-color: #3182bd;
         border-color: #3182bd;
       }
-
-      div.tab-pane {
-        padding-top: 1em;
+      
+      /* Marker cluster colours */
+      .marker-cluster-small {
+        background-color: rgba(189, 215, 231, 0.6);
+      }
+      .marker-cluster-small div {
+        background-color: rgba(107, 174, 214, 0.6);
+      }
+      .marker-cluster-medium,
+      .marker-cluster-large {
+        background-color: rgba(189, 215, 231, 0.6);
+      }
+      .marker-cluster-medium div,
+      .marker-cluster-large div {
+        background-color: rgba(239,243,255, 0.6);
       }
     </style>
   </head>
@@ -176,6 +188,7 @@
         "centre": [43.43,-80.46],
         "zoom": 11
       };
+      var map = L.mapbox.map("map", m.id).setView(m.centre, m.zoom);
 
       clusterOptions = {
         spiderfyOnMaxZoom: true,
@@ -184,16 +197,13 @@
         disableClusteringAtZoom: 15,
         maxClusterRadius: 30
       }
+      var markerClusters = new L.MarkerClusterGroup(clusterOptions);
+      map.addLayer(markerClusters);
     </script>
 
 
     <!-- Mapping -->
     <script>
-      var map = L.mapbox.map("map", m.id).setView(m.centre, m.zoom);
-
-      var markerClusters = new L.MarkerClusterGroup(clusterOptions);
-      map.addLayer(markerClusters);
-
       var circleHighlight = L.circle([0,0], 50, {
         color: 'red',
         fillColor: '#f03',
@@ -213,7 +223,30 @@
         }
         return data;
       }
+
+      var schoolColour = function(need) {
+        switch (need) {
+          case "1": return "#ffffb2";
+          case "2": return "#fed976";
+          case "3": return "#feb24c";
+          case "4": return "#fd8d3c";
+          case "5": return "#f03b20";
+          case "6": return "#bd0026";
+          default: return "#fff";
+        }
+      }
       
+      var districtColour = function(need) {
+        switch (need) {
+          case "1": return "#bae4b3";
+          case "2": return "#74c476";
+          case "3": return "#31a354";
+          case "4": return "#006d2c";
+          default: return "#fff";
+        }
+      }
+
+
       var schoolMarkers = L.geoJson(null, {
         onEachFeature: function (feature, layer) {
           if (feature.properties) {
@@ -237,18 +270,7 @@
           }
         },
         pointToLayer: function (feature, latlng) {
-          var iconColour = function(need) {
-            switch (need) {
-              case "1": return "#ffffb2";
-              case "2": return "#fed976";
-              case "3": return "#feb24c";
-              case "4": return "#fd8d3c";
-              case "5": return "#f03b20";
-              case "6": return "#bd0026";
-              default: return "#fff";
-            }
-          }
-          var colour = iconColour(school_needs[feature.id]);
+          var colour = schoolColour(school_needs[feature.id]);
           var icon = L.MakiMarkers.icon({icon: "school", color: colour, size: "m"});
           return L.marker(latlng, {icon: icon});
         }
@@ -261,25 +283,11 @@
         shapes, {
           style: function(feature) {
             var need = district_needs[feature.id];
-            function fill(need) {
-              switch (need) {
-                case "1": return "#bae4b3";
-                case "2": return "#74c476";
-                case "3": return "#31a354";
-                case "4": return "#006d2c";
-                default: return "#fff";
-              }
-            }
-            return { color: "#999", weight: 1, fillColor: fill(need), fillOpacity: .6 };
+            return { color: "#999", weight: 1, fillColor: districtColour(need), fillOpacity: .6 };
             }
         }
       );
       map.addLayer(neighbourhoodsLayer);
-
-
-
-
-
 
       map.on("moveend", function (e) {
         var bounds = map.getBounds();
@@ -292,7 +300,6 @@
           };
         });
       });
-
     </script>
-</body>
+  </body>
 </html>
