@@ -23,8 +23,8 @@
         height: 100%;
       }
 
-      /* bootstrap.css sets font-family for these */
-      body, .tooltip, .popover {
+      /* bootstrap.css and mapbox.css set font-family for these */
+      body, .tooltip, .popover, .leaflet-container {
         font-family: "Source Sans Pro";
       }
 
@@ -76,6 +76,16 @@
       .marker-cluster-medium div,
       .marker-cluster-large div {
         background-color: rgba(239,243,255, 0.6);
+      }
+      
+      /* Map Legend */
+      div.legend {
+        height: 1em;
+      }
+      div.legend i {
+        width: 1em;
+        height: 1em;
+        float: left;
       }
     </style>
   </head>
@@ -150,7 +160,35 @@
     <script type="text/template" id="school-popup">
       <h5>{{school}}</h5>
       <p>{{address}}</p>
-      <p>School Need Index (1-6): <strong>{{need}}</strong></p>
+    </script>
+
+    <script type="text/template" id="legend">
+      <ul class="list-group">
+        <li class="list-group-item">
+          <h5 class="list-group-item-heading">
+            School Need Index<small><br>Lowest to Highest Need</small>
+          </h5>
+          <div class="list-group-item-text legend">
+            <i style="background:#ffffb2;"></i>
+            <i style="background:#fed976;"></i>
+            <i style="background:#feb24c;"></i>
+            <i style="background:#fd8d3c;"></i>
+            <i style="background:#f03b20;"></i>
+            <i style="background:#bd0026;"></i>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <h5 class="list-group-item-heading">
+            Neighbourhood Need Index<small><br>Lowest to Highest Need</small>
+          </h5>
+          <div class="list-group-item-text legend">
+            <i style="background:#bae4b3;"></i>
+            <i style="background:#74c476;"></i>
+            <i style="background:#31a354;"></i>
+            <i style="background:#006d2c;"></i>
+          </div>
+        </li>
+      </ul>
     </script>
 
 
@@ -162,6 +200,7 @@
       }
       var listTemplate = template("school-list-item");
       var popupTemplate = template("school-popup");
+      var legendTemplate = template("legend");
     </script>
 
 
@@ -299,6 +338,14 @@
         }
       );
       map.addLayer(neighbourhoodsLayer);
+
+      var legend = L.control({position: "topright"});
+      legend.onAdd = function (map) {
+        var div = L.DomUtil.create("div", "info legend");
+        div.innerHTML = legendTemplate();
+        return div;
+      };
+      legend.addTo(map);
 
       map.on("moveend", function (e) {
         var bounds = map.getBounds();
